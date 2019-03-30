@@ -33,6 +33,8 @@ typedef struct {
     text_t greeter_text;
 
     double indicator_x, indicator_y;
+    double backcirc_x, backcirc_y;
+    double avatar_x, avatar_y;
 
     double bar_x, bar_y;
     double bar_offset;

@@ -89,6 +89,8 @@ char keyhlcolor[9] = "33db00ff";
 char bshlcolor[9] = "db3300ff";
 char separatorcolor[9] = "000000ff";
 char greetercolor[9] = "000000ff";
+char backcirccolor[9] = "000000ff";
+char avatarcolor[9] = "000000ff";
 
 /* int defining which display the lock indicator should be shown on. If -1, then show on all displays.*/
 int screen_number = 0;
@@ -157,6 +159,10 @@ char wrong_x_expr[32] = "ix\0";
 char wrong_y_expr[32] = "iy\0";
 char greeter_x_expr[32] = "ix\0";
 char greeter_y_expr[32] = "ix\0";
+char backcirc_x_expr[32] = "x/2\0";
+char backcirc_y_expr[32] = "y/2\0";
+char avatar_x_expr[32] = "x/2\0";
+char avatar_y_expr[32] = "y/2\0";
 
 double time_size = 32.0;
 double date_size = 14.0;
@@ -166,8 +172,11 @@ double modifier_size = 14.0;
 double layout_size = 14.0;
 double circle_radius = 90.0;
 double ring_width = 7.0;
+double backcirc_width = 70.0;
 double greeter_size = 32.0;
+double avatar_width = 128.0;
 
+char* avatar_path = NULL;
 char* verif_text = "verifying…";
 char* wrong_text = "wrong!";
 char* noinput_text = "no input";
@@ -1217,6 +1226,8 @@ int main(int argc, char *argv[]) {
         {"bshlcolor", required_argument, NULL, 313},
         {"separatorcolor", required_argument, NULL, 314},
         {"greetercolor", required_argument, NULL, 315},
+        {"backcirccolor", required_argument, NULL, 316},
+        {"avatarcolor", required_argument, NULL, 317},
 
         {"line-uses-ring", no_argument, NULL, 'r'},
         {"line-uses-inside", no_argument, NULL, 's'},
@@ -1228,6 +1239,8 @@ int main(int argc, char *argv[]) {
         {"indicator", no_argument, NULL, 401},
         {"radius", required_argument, NULL, 402},
         {"ring-width", required_argument, NULL, 403},
+        {"backcirc-width", required_argument, NULL, 404},
+        {"avatar-width", required_argument, NULL, 405},
 
         // alignment
 
@@ -1281,6 +1294,8 @@ int main(int argc, char *argv[]) {
         {"modifpos", required_argument, NULL, 546},
         {"indpos", required_argument, NULL, 547},
         {"greeterpos", required_argument, NULL, 548},
+        {"backcircpos", required_argument, NULL, 549},
+        {"avatarpos", required_argument, NULL, 550},
 
 
         // bar indicator stuff
@@ -1306,6 +1321,9 @@ int main(int argc, char *argv[]) {
         /* slideshow options */
         {"slideshow-interval", required_argument, NULL, 903},
         {"slideshow-random-selection", no_argument, NULL, 904},
+
+        /* avatar */
+        {"avatar-path", required_argument, NULL, 905},
 
         {NULL, no_argument, NULL, 0}};
 
@@ -1447,6 +1465,12 @@ int main(int argc, char *argv[]) {
             case 315:
                 parse_color(greetercolor);
                 break;
+            case 316:
+                parse_color(backcirccolor);
+                break;
+            case 317:
+                parse_color(avatarcolor);
+                break;
 // general indicator opts
             case 400:
                 show_clock = true;
@@ -1472,6 +1496,24 @@ int main(int argc, char *argv[]) {
                 if (ring_width < 1.0) {
                     fprintf(stderr, "ring-width must be a positive float; ignoring...\n");
                     ring_width = 7.0;
+                }
+                break;
+            case 404:
+                arg = optarg;
+                if (sscanf(arg, "%lf", &backcirc_width) != 1)
+                    errx(1, "back-circ-radius must be a number\n");
+                if (backcirc_width < 1.0) {
+                    fprintf(stderr, "back-circ-radius must be a positive float; ignoring...\n");
+                    backcirc_width = 70.0;
+                }
+                break;
+            case 405:
+                arg = optarg;
+                if (sscanf(arg, "%lf", &avatar_width) != 1)
+                    errx(1, "avatar-width must be a number\n");
+                if (avatar_width < 1.0) {
+                    fprintf(stderr, "avatar_width must be a positive float; ignoring...\n");
+                    avatar_width = 128.0;
                 }
                 break;
 // alignment stuff
@@ -1735,6 +1777,28 @@ int main(int argc, char *argv[]) {
                     errx(1, "indpos must be of the form x:y\n");
                 }
                 break;
+            case 549:
+                if (strlen(optarg) > 31) {
+                    // this is overly restrictive since both the x and y string buffers have size 32, but it's easier to check.
+                    errx(1, "backcirc position string can be at most 31 characters\n");
+                }
+                arg = optarg;
+                if (sscanf(arg, "%30[^:]:%30[^:]", backcirc_x_expr, backcirc_y_expr) != 2) {
+                    errx(1, "backcirc must be of the form x:y\n");
+                }
+                printf("BackCirc %s, %s\n", backcirc_x_expr, backcirc_y_expr);
+                break;
+            case 550:
+                if (strlen(optarg) > 31) {
+                    // this is overly restrictive since both the x and y string buffers have size 32, but it's easier to check.
+                    errx(1, "avatar position string can be at most 31 characters\n");
+                }
+                arg = optarg;
+                if (sscanf(arg, "%30[^:]:%30[^:]", avatar_x_expr, avatar_y_expr) != 2) {
+                    errx(1, "avatar position must be of the form x:y\n");
+                }
+                printf("Avatar pos %s, %s\n", avatar_x_expr, avatar_y_expr);
+                break;
 // bar indicator
             case 700:
                 bar_enabled = true;
@@ -1822,6 +1886,9 @@ int main(int argc, char *argv[]) {
                 break;
             case 904:
                 slideshow_random_selection = true;
+                break;
+            case 905:
+                avatar_path = optarg;
                 break;
             case 'm':
                 pass_media_keys = true;

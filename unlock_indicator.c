@@ -29,7 +29,9 @@
 #include <time.h>
 
 extern double circle_radius;
+extern double backcirc_width;
 extern double ring_width;
+extern double avatar_width;
 
 #define BUTTON_RADIUS (circle_radius)
 #define RING_WIDTH (ring_width)
@@ -89,6 +91,8 @@ extern char keyhlcolor[9];
 extern char bshlcolor[9];
 extern char separatorcolor[9];
 extern char greetercolor[9];
+extern char backcirccolor[9];
+extern char avatarcolor[9];
 extern int internal_line_source;
 
 extern int screen_number;
@@ -125,6 +129,10 @@ extern char modif_x_expr[32];
 extern char modif_y_expr[32];
 extern char greeter_x_expr[32];
 extern char greeter_y_expr[32];
+extern char backcirc_x_expr[32];
+extern char backcirc_y_expr[32];
+extern char avatar_x_expr[32];
+extern char avatar_y_expr[32];
 
 extern double time_size;
 extern double date_size;
@@ -134,6 +142,7 @@ extern double modifier_size;
 extern double layout_size;
 extern double greeter_size;
 
+extern char* avatar_path;
 extern char *verif_text;
 extern char *wrong_text;
 extern char *noinput_text;
@@ -189,6 +198,8 @@ rgba_t bshl16;
 rgba_t sep16;
 rgba_t bar16;
 rgba_t greeter16;
+rgba_t backcirc16;
+rgba_t avatar16;
 // just rgb
 rgb_t rgb16;
 
@@ -344,6 +355,7 @@ static void draw_bar(cairo_t *ctx, double x, double y, double bar_offset) {
                     break;
             }
         }
+
 
         if (bar_orientation == BAR_VERT) {
             width = (cur_bar_height <= 0 ? bar_base_height : cur_bar_height);
@@ -611,6 +623,8 @@ void init_colors_once(void) {
     colorgen(&tmp, separatorcolor, &sep16);
     colorgen(&tmp, bar_base_color, &bar16);
     colorgen(&tmp, greetercolor, &greeter16);
+    colorgen(&tmp, backcirccolor, &backcirc16);
+    colorgen(&tmp, avatarcolor, &avatar16);
     colorgen_rgb(&tmp_rgb, color, &rgb16);
 }
 
@@ -662,12 +676,56 @@ static void draw_elements(cairo_t *const ctx, DrawData const *const draw_data) {
         draw_bar(ctx, draw_data->bar_x, draw_data->bar_y, draw_data->bar_offset);
     }
 
+
+    cairo_set_source_rgba(ctx, backcirc16.red, backcirc16.green, backcirc16.blue, backcirc16.alpha);
+    cairo_arc(ctx, draw_data->backcirc_x, draw_data->backcirc_y, backcirc_width, 0, 2 * M_PI);
+    // cairo_rectangle(ctx, draw_data->backcirc_x - backcirc_width / 2, draw_data->backcirc_y, backcirc_width, 250);
+    cairo_fill(ctx);
     draw_text(ctx, draw_data->status_text);
     draw_text(ctx, draw_data->keylayout_text);
     draw_text(ctx, draw_data->mod_text);
     draw_text(ctx, draw_data->time_text);
     draw_text(ctx, draw_data->date_text);
     draw_text(ctx, draw_data->greeter_text);
+
+
+    cairo_surface_t *source = NULL;
+    source = cairo_image_surface_create_from_png (avatar_path);
+    if (cairo_surface_status(source) == CAIRO_STATUS_SUCCESS)
+    {
+        double s_width = cairo_image_surface_get_width(source);
+        double s_height = cairo_image_surface_get_height(source);
+
+        cairo_save(ctx);
+        double x         = draw_data->avatar_x - avatar_width / 2,
+               y         = draw_data->avatar_y - avatar_width / 2,
+               width         = avatar_width,
+               height        = avatar_width,
+               aspect        = 1.0,
+               corner_radius = height / 2.0;
+
+        double radius = corner_radius / aspect;
+        double degrees = M_PI / 180.0;
+
+        cairo_stroke (ctx);
+        cairo_new_sub_path (ctx);
+        cairo_arc (ctx, x + width - radius, y + radius, radius, -90 * degrees, 0 * degrees);
+        cairo_arc (ctx, x + width - radius, y + height - radius, radius, 0 * degrees, 90 * degrees);
+        cairo_arc (ctx, x + radius, y + height - radius, radius, 90 * degrees, 180 * degrees);
+        cairo_arc (ctx, x + radius, y + radius, radius, 180 * degrees, 270 * degrees);
+        cairo_close_path (ctx);
+
+        cairo_translate(ctx, x, y);
+        cairo_scale(ctx, avatar_width/s_width, avatar_width/s_height);
+        cairo_set_source_surface(ctx, source, 0, 0);
+        cairo_fill_preserve (ctx);
+        cairo_set_source_rgba (ctx, avatar16.red, avatar16.green, avatar16.blue, avatar16.alpha);
+        cairo_set_line_width (ctx, 0.0);
+        cairo_stroke(ctx);
+        cairo_restore(ctx);
+
+        cairo_surface_destroy (source);
+    }
 }
 
 /*
@@ -917,6 +975,12 @@ xcb_pixmap_t draw_image(uint32_t *resolution) {
     te_expr *te_greeter_x_expr = compile_expression("--greeterpos", greeter_x_expr, vars, vars_size);
     te_expr *te_greeter_y_expr = compile_expression("--greeterpos", greeter_y_expr, vars, vars_size);
 
+    te_expr *te_backcirc_x_expr = compile_expression("--backcircpos", backcirc_x_expr, vars, vars_size);
+    te_expr *te_backcirc_y_expr = compile_expression("--backcircpos", backcirc_y_expr, vars, vars_size);
+
+    te_expr *te_avatar_x_expr = compile_expression("--avatarpos", avatar_x_expr, vars, vars_size);
+    te_expr *te_avatar_y_expr = compile_expression("--avatarpos", avatar_y_expr, vars, vars_size);
+
     if (xr_screens > 0) {
         if (screen_number < 0 || screen_number > xr_screens) {
             screen_number = 0;
@@ -956,6 +1020,10 @@ xcb_pixmap_t draw_image(uint32_t *resolution) {
             draw_data.keylayout_text.y = te_eval(te_layout_y_expr);
             draw_data.greeter_text.x = te_eval(te_greeter_x_expr);
             draw_data.greeter_text.y = te_eval(te_greeter_y_expr);
+            draw_data.backcirc_x = te_eval(te_backcirc_x_expr);
+            draw_data.backcirc_y = te_eval(te_backcirc_y_expr);
+            draw_data.avatar_x = te_eval(te_avatar_x_expr);
+            draw_data.avatar_y = te_eval(te_avatar_y_expr);
 
             switch (auth_state) {
                 case STATE_AUTH_VERIFY:
@@ -1055,6 +1123,10 @@ xcb_pixmap_t draw_image(uint32_t *resolution) {
     te_free(te_bar_expr);
     te_free(te_greeter_x_expr);
     te_free(te_greeter_y_expr);
+    te_free(te_backcirc_x_expr);
+    te_free(te_backcirc_y_expr);
+    te_free(te_avatar_x_expr);
+    te_free(te_avatar_y_expr);
 
     cairo_set_source_surface(xcb_ctx, output, 0, 0);
     cairo_rectangle(xcb_ctx, 0, 0, resolution[0], resolution[1]);
