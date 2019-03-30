@@ -10,6 +10,7 @@ V='#bb00bbbb'  # verifying
 cd "$(dirname "$0")"
 
 ./x86_64-pc-linux-gnu/i3lock \
+-n \
 --ignore-empty-password \
 --blur 1 \
 --bar-indicator \
@@ -21,7 +22,7 @@ cd "$(dirname "$0")"
 --keyhlcolor 4286f4cc \
 --bar-periodic-step 50 \
 --bar-step 50 \
---bar-width 250 \
+--bar-width 50 \
 --redraw-thread \
 \
 --clock \
@@ -34,7 +35,7 @@ cd "$(dirname "$0")"
 --time-align 0 \
 --ringvercolor 0000FF88 \
 --ringwrongcolor ff000088 \
---statuspos 5:h-16 \
+--statuspos w/2:h/2-50 \
 --verif-align 0 \
 --wrong-align 0 \
 --verifcolor 000000ff \

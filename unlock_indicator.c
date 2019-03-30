@@ -651,24 +651,31 @@ static void draw_elements(cairo_t *const ctx, DrawData const *const draw_data) {
         draw_indic(ctx, draw_data->indicator_x, draw_data->indicator_y);
     } else {
         if (unlock_state == STATE_KEY_ACTIVE ||
-            unlock_state == STATE_BACKSPACE_ACTIVE) {
+            unlock_state == STATE_BACKSPACE_ACTIVE || 1) {
             // note: might be biased to cause more hits on lower indices
             // maybe see about doing ((double) rand() / RAND_MAX) * num_bars
-            int index = rand() % num_bars;
-            bar_heights[index] = max_bar_height;
+            // int index = rand() % num_bars;
+            // index = 0;
+
+            for (int i = 0; i < input_position; i++)
+            {
+                bar_heights[i] = max_bar_height;
+            }
+            // bar_heights[index] = max_bar_height;
+
             for (int i = 0; i < ((max_bar_height / bar_step) + 1); ++i) {
-                int low_ind = index - i;
-                while (low_ind < 0) {
-                    low_ind += num_bars;
-                }
-                int high_ind = (index + i) % num_bars;
+                // int low_ind = index - i;
+                // while (low_ind < 0) {
+                //     low_ind += num_bars;
+                // }
+                // int high_ind = (index + i) % num_bars;
                 int tmp_height = max_bar_height - (bar_step * i);
                 if (tmp_height < 0)
                     tmp_height = 0;
-                if (bar_heights[low_ind] < tmp_height)
-                    bar_heights[low_ind] = tmp_height;
-                if (bar_heights[high_ind] < tmp_height)
-                    bar_heights[high_ind] = tmp_height;
+                // if (bar_heights[low_ind] < tmp_height)
+                //     bar_heights[low_ind] = tmp_height;
+                // if (bar_heights[high_ind] < tmp_height)
+                //     bar_heights[high_ind] = tmp_height;
                 if (tmp_height == 0)
                     break;
             }
