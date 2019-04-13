@@ -657,7 +657,7 @@ static void draw_elements(cairo_t *const ctx, DrawData const *const draw_data) {
             // int index = rand() % num_bars;
             // index = 0;
 
-            for (int i = 0; i < input_position; i++)
+            for (int i = 0; i < input_position && i < num_bars; i++)
             {
                 bar_heights[i] = max_bar_height;
             }
